@@ -1,0 +1,6 @@
+Issue related to installing Supabase
+npm install @supabase/supabase-js @supabase/ssr
+npm audit report
+
+1. monitor for a Monaco or @monaco-editor/react update that pulls in DOMPurify 3.3.2+,
+2. revisit this before production launch. The advisory indicates 3.3.2 is the patched line, and upstream users are already asking Monaco-related packages to upgrade to that version.
