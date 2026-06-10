@@ -93,7 +93,7 @@ export default function FreePlayLabPage() {
               const sendToParent = (type, args) => {
                 window.parent.postMessage(
                   {
-                    source: "code-tutor-playground",
+                    source: "orbitio-playground",
                     type,
                     messages: args.map((arg) => {
                       if (typeof arg === "string") return arg;
@@ -329,7 +329,7 @@ function ConsoleListener({
 }) {
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.data?.source !== "code-tutor-playground") return;
+      if (event.data?.source !== "orbitio-playground") return;
 
       const text = Array.isArray(event.data.messages)
         ? event.data.messages.join(" ")

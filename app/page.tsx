@@ -13,7 +13,7 @@ export default function HomePage() {
         <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="max-w-3xl">
             <p className="mb-3 inline-block rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-800">
-              Code Tutor
+              Orbitio
             </p>
 
             <h1 className="text-4xl font-bold tracking-tight text-slate-900">
