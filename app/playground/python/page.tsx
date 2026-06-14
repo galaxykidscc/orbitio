@@ -5,9 +5,14 @@ import Editor from "@monaco-editor/react";
 
 declare global {
   interface Window {
-    loadPyodide?: (options: { indexURL: string }) => Promise<any>;
+    loadPyodide?: (options: { indexURL: string }) => Promise<PyodideRuntime>;
   }
 }
+
+type PyodideRuntime = {
+  setStdout: (options: { batched: (text: string) => void }) => void;
+  runPythonAsync: (code: string) => Promise<unknown>;
+};
 
 const starterPython = `print("Hello from Python!")
 
@@ -18,7 +23,7 @@ for i in range(3):
     print("Count:", i + 1)
 `;
 
-let pyodidePromise: Promise<any> | null = null;
+let pyodidePromise: Promise<PyodideRuntime> | null = null;
 
 async function getPyodide() {
   if (!window.loadPyodide) {
@@ -48,9 +53,13 @@ async function runPythonCode(code: string): Promise<string> {
   try {
     await pyodide.runPythonAsync(code);
     return output.trim() || "Done.";
-  } catch (error: any) {
-    return `Python Error:\n${error?.message || String(error)}`;
+  } catch (error: unknown) {
+    return `Python Error:\n${getErrorMessage(error)}`;
   }
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
 }
 
 const editorOptions = {
@@ -73,8 +82,8 @@ export default function PythonPlaygroundPage() {
     try {
       const result = await runPythonCode(code);
       setOutput(result);
-    } catch (error: any) {
-      setOutput(`Python Error:\n${error?.message || String(error)}`);
+    } catch (error: unknown) {
+      setOutput(`Python Error:\n${getErrorMessage(error)}`);
     } finally {
       setIsRunning(false);
     }
