@@ -1,22 +1,10 @@
-export type HtmlJsLesson = {
-  id: number;
-  slug: string;
-  title: string;
-  badge: string;
-  story: string;
-  objective: string;
-  steps: string[];
-  hints: string[];
-  starterHtml: string;
-  starterCss: string;
-  starterJs: string;
-  requiredLessonId: number | null;
-};
+import type { HtmlJsLesson } from "../types";
 
 export const htmlJsLessons: HtmlJsLesson[] = [
   {
-    id: 1,
+    id: "html-js-repair-the-signal-beacon",
     slug: "repair-the-signal-beacon",
+    type: "html-js",
     title: "Mission 1: Repair the Signal Beacon",
     badge: "Beginner Mission",
     story:
@@ -70,12 +58,12 @@ document.getElementById("btn")?.addEventListener("click", () => {
 
   console.log("Activate button clicked");
 });`,
-    requiredLessonId: null,
   },
 
   {
-    id: 2,
+    id: "html-js-wake-the-forest-gate",
     slug: "wake-the-forest-gate",
+    type: "html-js",
     title: "Mission 2: Wake the Forest Gate",
     badge: "Beginner Mission",
     story:
@@ -129,7 +117,6 @@ document.getElementById("btn")?.addEventListener("click", () => {
 
   console.log("Wake button clicked");
 });`,
-    requiredLessonId: 1,
   },
 ];
 
