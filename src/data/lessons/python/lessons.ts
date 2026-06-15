@@ -18,15 +18,15 @@ export const pythonLessons: PythonLesson[] = [
     ],
     hints: [
       "Use print() to show text in Python.",
-      "Variables can store text like robot_name = \"Bolt\".",
+      "Variables can store text like robot_name = \"Tricky\".",
       "You can print more than one thing with commas.",
     ],
     estimatedMinutes: 10,
     starterCode: `print("Hello, robot!")
 
-robot_name = "Bolt"
+robot_name = "Tricky"
 print(robot_name, "is waiting for instructions.")
 `,
-    expectedOutput: "Hello, robot!\nBolt is ready!",
+    expectedOutput: "Hello, robot!\nTricky is ready!",
   },
 ];
