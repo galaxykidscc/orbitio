@@ -5,13 +5,13 @@ KEY RULE
     Create a branch → commit → push → pull request → code review/approval → merge
 
 (1) Clone the shared repo
-    a. Visual Studio → File → Clone Repository
+    a. VS Code -> Source Control → Clone Repository
     b. Paste the GitHub repo URL
     c. Clone it
 
 (2) Create your own branch
-    a. Bottom-right branch selector, usually says main
-    b. Click it → New Branch
+    a. Source Control in VS Code
+    b. Create new Branch
     c. Name it something like: feature/python-lessons
 
 (3) Make code changes
@@ -28,11 +28,12 @@ KEY RULE
     b. Visual Studio sends your branch to GitHub.
 
 (6) Open a Pull Request
-    a. In Visual Studio, look for Create Pull Request (PR)
-    b. Or go to GitHub in the browser
-    c. GitHub will usually show: "Compare & pull request"
-    d. Create the PR into main
+    a. In VS Code, look for Create Pull Request (PR)
+    b. Add title and description for your PR
+    c. Click Create
+    d. Message about review requirement should appear
 
 (7) Someone reviews and approves
     a. Another team member approves the PR
-    b. Finally, you click Merge pull request on GitHub
+    b. Finally, you click Merge pull request on GitHub (to main branch)
+    c. Delete branch (both remote and local)

@@ -1,10 +1,10 @@
 // src/data/lessons/registry.ts
 
 import type { Lesson } from "./types";
-import { htmlJsLessons } from "./html-js/lessons";
-import { pythonLessons } from "./python/lessons";
-import { robloxLessons } from "./roblox/lessons";
-import { scratchLessons } from "./scratch/lessons";
+import { htmlJsLessons } from "./html-js";
+import { pythonLessons } from "./python";
+import { robloxLessons } from "./roblox";
+import { scratchLessons } from "./scratch";
 
 export const allLessons: Lesson[] = [
   ...htmlJsLessons,
