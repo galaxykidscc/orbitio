@@ -51,12 +51,15 @@ Each lesson type also has fields for its specific workspace:
 - `scratch`: `projectPrompt` and `checklist`
 - `roblox`: `studioSteps` and optional `scriptStarter`
 
-Lesson files are grouped by type:
+Lesson files are grouped by type, with one file per lesson:
 
-- `src/data/lessons/html-js/lessons.ts`
-- `src/data/lessons/python/lessons.ts`
-- `src/data/lessons/scratch/lessons.ts`
-- `src/data/lessons/roblox/lessons.ts`
+- `src/data/lessons/html-js/repair-the-signal-beacon.ts`
+- `src/data/lessons/html-js/wake-the-forest-gate.ts`
+- `src/data/lessons/python/power-up-the-robot.ts`
+- `src/data/lessons/scratch/animate-the-moon-cat.ts`
+
+Each lesson-type folder has an `index.ts` file that gathers its lesson files
+into one exported array, such as `htmlJsLessons` or `pythonLessons`.
 
 The registry in `src/data/lessons/registry.ts` combines those arrays into
 `allLessons`. The rest of the app uses the registry helper functions instead of
@@ -162,19 +165,24 @@ action, or another thin data-loading layer.
 ## Adding A Lesson To An Existing Track
 
 1. Pick the correct lesson type.
-2. Open that lesson type's file in `src/data/lessons`.
-3. Add a new lesson object to the exported lesson array.
+2. Create a new slug-named lesson file in that lesson type's folder.
+3. Export one lesson object from the new file.
 4. Make sure `id` and `slug` are unique.
-5. Add the new lesson's `slug` to the correct track's `lessonSlugs` array in
+5. Import the lesson in that folder's `index.ts` file and add it to the exported
+   lesson array.
+6. Add the new lesson's `slug` to the correct track's `lessonSlugs` array in
    `src/data/tracks/tracks.ts`.
-6. Run `npm run lint`.
-7. Run `npx tsc --noEmit --pretty false`.
-8. Open the track page and the lesson page in the browser.
+7. Run `npm run lint`.
+8. Run `npx tsc --noEmit --pretty false`.
+9. Open the track page and the lesson page in the browser.
 
 For example, to add a third Web Basics lesson:
 
-1. Add the lesson object to `src/data/lessons/html-js/lessons.ts`.
-2. Add its slug to the end of the `web-basics` track:
+1. Add the lesson object to a new file like
+   `src/data/lessons/html-js/your-new-lesson-slug.ts`.
+2. Import it in `src/data/lessons/html-js/index.ts` and add it to
+   `htmlJsLessons`.
+3. Add its slug to the end of the `web-basics` track:
 
 ```ts
 lessonSlugs: [
@@ -186,7 +194,7 @@ lessonSlugs: [
 
 ## Adding A New Track
 
-1. Add any needed lessons to the correct lesson data file.
+1. Add any needed lessons to the correct lesson-type folder.
 2. Add a new track object to the `tracks` array in
    `src/data/tracks/tracks.ts`.
 3. Set `lessonType` to the type used by the lessons in the track.
@@ -203,11 +211,12 @@ You will need to:
 1. Add the new type to `LessonType` in `src/data/lessons/types.ts`.
 2. Add a new lesson-specific type to the `Lesson` union.
 3. Create a new lesson data folder under `src/data/lessons`.
-4. Import the new lesson array in `src/data/lessons/registry.ts`.
-5. Create a new lesson view component in `components/lessons`.
-6. Add a new `case` to `LessonRenderer`.
-7. Add at least one track that uses the new lesson type.
-8. Run lint, TypeScript, and browser checks.
+4. Add an `index.ts` file that exports that type's lesson array.
+5. Import the new lesson array in `src/data/lessons/registry.ts`.
+6. Create a new lesson view component in `components/lessons`.
+7. Add a new `case` to `LessonRenderer`.
+8. Add at least one track that uses the new lesson type.
+9. Run lint, TypeScript, and browser checks.
 
 ## Common Mistakes
 
