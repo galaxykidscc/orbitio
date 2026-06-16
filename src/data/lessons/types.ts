@@ -2,6 +2,19 @@
 
 export type LessonType = "html-js" | "python" | "scratch" | "roblox";
 
+export type PythonLessonValidation =
+  | {
+      mode: "exactOutput";
+      expectedOutput: string;
+      ignoreWhitespace?: boolean;
+    }
+  | {
+      mode: "flexible";
+      requiredKeywords?: string[];
+      minPrintStatements?: number;
+      bannedText?: string[];
+    };
+
 export type BaseLesson = {
   id: string;
   slug: string;
@@ -25,7 +38,7 @@ export type HtmlJsLesson = BaseLesson & {
 export type PythonLesson = BaseLesson & {
   type: "python";
   starterCode: string;
-  expectedOutput?: string;
+  validation: PythonLessonValidation;
 };
 
 export type ScratchLesson = BaseLesson & {
