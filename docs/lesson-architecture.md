@@ -48,7 +48,7 @@ Each lesson type also has fields for its specific workspace:
 
 - `html-js`: `starterHtml`, `starterCss`, and `starterJs`
 - `python`: `starterCode` and optional `expectedOutput`
-- `scratch`: `projectPrompt` and `checklist`
+- `scratch`: `projectPrompt`, `instructionSections`, and `checklist`
 - `roblox`: `studioSteps` and optional `scriptStarter`
 
 Lesson files are grouped by type, with one file per lesson:
@@ -64,6 +64,12 @@ into one exported array, such as `htmlJsLessons` or `pythonLessons`.
 The registry in `src/data/lessons/registry.ts` combines those arrays into
 `allLessons`. The rest of the app uses the registry helper functions instead of
 importing each lesson file directly.
+
+Scratch lessons are different from code editor lessons. Students read the
+instructions and check off progress in Orbitio, but build the actual project in
+Scratch. Use `instructionSections` for the main step-by-step lesson body. Each
+section can include a short `hint` that the student expands only when they need
+extra help.
 
 ## Track Data
 

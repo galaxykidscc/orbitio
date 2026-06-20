@@ -41,9 +41,18 @@ export type PythonLesson = BaseLesson & {
   validation: PythonLessonValidation;
 };
 
+export type ScratchInstructionSection = {
+  id: string;
+  title: string;
+  goal: string;
+  instructions: string[];
+  hint?: string;
+};
+
 export type ScratchLesson = BaseLesson & {
   type: "scratch";
   projectPrompt: string;
+  instructionSections: ScratchInstructionSection[];
   checklist: string[];
 };
 
