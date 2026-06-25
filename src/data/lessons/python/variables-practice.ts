@@ -1,7 +1,7 @@
 import type { PythonLesson } from "../types";
 import { PythonLessonValidation } from "@/src/data/lessons/types";
 
-export const practiceUsingPrint: PythonLesson = {
+export const variablesPractice: PythonLesson = {
   id: "variables-practice",
   slug: "variables-practice",
   type: "python",
@@ -24,7 +24,7 @@ export const practiceUsingPrint: PythonLesson = {
   ],
   estimatedMinutes: 10,
   starterCode: `robot_name = 
-power_level = 0
+power_level = 
 
 print()
 print()
