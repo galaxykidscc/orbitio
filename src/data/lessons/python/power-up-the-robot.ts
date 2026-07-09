@@ -1,5 +1,4 @@
 import type { PythonLesson } from "../types";
-import { PythonLessonValidation } from "@/src/data/lessons/types";
 
 export const powerUpTheRobot: PythonLesson = {
   id: "python-power-up-the-robot",
@@ -28,8 +27,9 @@ robot_name = "Nova"
 print(robot_name, "is waiting for instructions.")
 `,
   validation: {
-  mode: "exactOutput",
-  expectedOutput: "Nova online!\nPower level: 100%",
-  ignoreWhitespace: true,
+    mode: "flexible",
+    requiredKeywords: ["print(", "robot_name"],
+    minPrintStatements: 2,
+    bannedText: ["waiting for instructions"],
   },
 };
