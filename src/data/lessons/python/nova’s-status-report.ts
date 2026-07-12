@@ -1,5 +1,4 @@
 import type { PythonLesson } from "../types";
-import { PythonLessonValidation } from "@/src/data/lessons/types";
 
 export const novaStatusReport: PythonLesson = {
   id: "python-nova's-status-report",

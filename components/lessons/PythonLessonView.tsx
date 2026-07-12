@@ -8,6 +8,8 @@ import {
 } from "react";
 import Editor from "@monaco-editor/react";
 import Link from "next/link";
+import { completeLesson } from "@/src/data/progress/progress";
+import { validatePythonLesson } from "@/src/data/lessons/python/validate-python-lesson";
 import type { PythonLesson } from "@/src/data/lessons/types";
 import type { Track } from "@/src/data/tracks/tracks";
 
@@ -79,20 +81,44 @@ export default function PythonLessonView({
 }: PythonLessonViewProps) {
   const [code, setCode] = useState(lesson.starterCode);
   const [output, setOutput] = useState("Click Run to execute Python.");
+  const [validationMessage, setValidationMessage] = useState(
+    "Run your code to check this mission."
+  );
+  const [missionComplete, setMissionComplete] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [editorWidth, setEditorWidth] = useState(62);
   const [instructionsHeight, setInstructionsHeight] = useState(58);
   const workspaceRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
+  const currentLessonIndex = track.lessonSlugs.indexOf(lesson.slug);
+  const nextLessonSlug = track.lessonSlugs[currentLessonIndex + 1];
 
   const handleRun = async () => {
     setIsRunning(true);
     setOutput("Running Python...");
+    setValidationMessage("Checking your mission...");
 
     try {
-      setOutput(await runPythonCode(code));
+      const nextOutput = await runPythonCode(code);
+      setOutput(nextOutput);
+
+      if (nextOutput.startsWith("Python Error:")) {
+        setMissionComplete(false);
+        setValidationMessage("Fix the Python error, then run the mission again.");
+        return;
+      }
+
+      const validationResult = validatePythonLesson(code, nextOutput, lesson);
+      setMissionComplete(validationResult.passed);
+      setValidationMessage(validationResult.message);
+
+      if (validationResult.passed) {
+        completeLesson(lesson.slug);
+      }
     } catch (error: unknown) {
       setOutput(`Python Error:\n${getErrorMessage(error)}`);
+      setMissionComplete(false);
+      setValidationMessage("Fix the Python error, then run the mission again.");
     } finally {
       setIsRunning(false);
     }
@@ -101,6 +127,8 @@ export default function PythonLessonView({
   const handleReset = () => {
     setCode(lesson.starterCode);
     setOutput("Click Run to execute Python.");
+    setValidationMessage("Run your code to check this mission.");
+    setMissionComplete(false);
   };
 
   const startHorizontalResize = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -111,7 +139,8 @@ export default function PythonLessonView({
     const bounds = workspace.getBoundingClientRect();
 
     beginResize("col-resize", (pointerEvent) => {
-      const nextWidth = ((pointerEvent.clientX - bounds.left) / bounds.width) * 100;
+      const nextWidth =
+        ((pointerEvent.clientX - bounds.left) / bounds.width) * 100;
       const maximumWidth = ((bounds.width - 372) / bounds.width) * 100;
       setEditorWidth(clamp(nextWidth, 35, Math.min(75, maximumWidth)));
     });
@@ -288,6 +317,26 @@ export default function PythonLessonView({
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto bg-slate-900 p-4 font-mono text-sm text-emerald-300">
               <pre className="whitespace-pre-wrap">{output}</pre>
+            </div>
+            <div
+              className={`border-t px-4 py-3 text-sm ${
+                missionComplete
+                  ? "border-emerald-800 bg-emerald-950 text-emerald-200"
+                  : "border-slate-800 bg-slate-950 text-slate-300"
+              }`}
+            >
+              <p className="font-semibold">
+                {missionComplete ? "Mission validated" : "Validation"}
+              </p>
+              <p className="mt-1">{validationMessage}</p>
+              {missionComplete && nextLessonSlug && (
+                <Link
+                  href={`/missions/${track.slug}/${nextLessonSlug}`}
+                  className="mt-3 inline-block rounded-lg bg-emerald-400 px-3 py-2 font-semibold text-emerald-950 transition hover:bg-emerald-300"
+                >
+                  Continue to next mission
+                </Link>
+              )}
             </div>
           </section>
         </div>
