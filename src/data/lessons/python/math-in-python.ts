@@ -30,7 +30,14 @@ second_number =
 
 `,
   validation: {
-    mode: "exactOutput",
-    expectedOutput: "65",
+    mode: "flexible",
+    requiredKeywords: [
+      "first_number",
+      "second_number",
+      "total",
+      "+",
+      "print(",
+    ],
+    minPrintStatements: 1,
   }
 };
