@@ -18,7 +18,7 @@ export const novaStatusReport: PythonLesson = {
     "Use print() to display the robot_name variable.",
     "Use print() to display the location variable.",
     "Use print() to display the power_level variable.",
-    "Press Run when you are ready!"
+    "Press Run when you are ready!",
   ],
   hints: [
     "Text values need quotation marks, like robot_name = \"Nova\".",
@@ -29,13 +29,15 @@ export const novaStatusReport: PythonLesson = {
   estimatedMinutes: 10,
   starterCode: ``,
   validation: {
-    mode: "flexible",
-    requiredKeywords: [
-      "robot_name",
-      "location",
-      "power_level",
-      "print(",
+    mode: "rules",
+    rules: [
+      { type: "assignmentExists", name: "robot_name", valueType: "string" },
+      { type: "assignmentExists", name: "location", valueType: "string" },
+      { type: "assignmentExists", name: "power_level", valueType: "numeric" },
+      { type: "minPrintCalls", count: 4 },
+      { type: "printIdentifier", name: "robot_name" },
+      { type: "printIdentifier", name: "location" },
+      { type: "printIdentifier", name: "power_level" },
     ],
-    minPrintStatements: 4,
   },
 };

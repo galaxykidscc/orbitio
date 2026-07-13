@@ -2,18 +2,62 @@
 
 export type LessonType = "html-js" | "python" | "scratch" | "roblox";
 
-export type PythonLessonValidation =
+export type PythonValidationRule =
   | {
-      mode: "exactOutput";
+      type: "exactOutput";
       expectedOutput: string;
       ignoreWhitespace?: boolean;
+      message?: string;
     }
   | {
-      mode: "flexible";
-      requiredKeywords?: string[];
-      minPrintStatements?: number;
-      bannedText?: string[];
+      type: "requiredCodeText";
+      text: string;
+      message?: string;
+    }
+  | {
+      type: "bannedCodeText";
+      text: string;
+      message?: string;
+    }
+  | {
+      type: "minPrintCalls";
+      count: number;
+      message?: string;
+    }
+  | {
+      type: "assignmentExists";
+      name: string;
+      valueType?: "any" | "numeric" | "string";
+      message?: string;
+    }
+  | {
+      type: "printIdentifier";
+      name: string;
+      message?: string;
+    }
+  | {
+      type: "minNumericAssignments";
+      count: number;
+      message?: string;
+    }
+  | {
+      type: "computedAssignment";
+      id: string;
+      operator: "+" | "-" | "*" | "/";
+      operands: "previousNumericAssignments";
+      message?: string;
+    }
+  | {
+      type: "printComputedAssignment";
+      computedAssignmentId: string;
+      message?: string;
     };
+
+export type PythonLessonValidation =
+  {
+    mode: "rules";
+    rules: PythonValidationRule[];
+  };
 
 export type BaseLesson = {
   id: string;
