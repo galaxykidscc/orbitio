@@ -27,7 +27,12 @@ export const syntaxErrors: PythonLesson = {
 printNo syntax errors!
 `,
   validation: {
-    mode: "exactOutput",
-    expectedOutput: "Python is ready!\nNo syntax errors!",
+    mode: "rules",
+    rules: [
+      {
+        type: "exactOutput",
+        expectedOutput: "Python is ready!\nNo syntax errors!",
+      },
+    ],
   },
 };

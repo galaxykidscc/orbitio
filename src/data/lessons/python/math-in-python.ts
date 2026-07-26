@@ -24,20 +24,30 @@ export const mathInPython: PythonLesson = {
     "Example: total = number_one + number_two",
     "To print a variable, do not put quotation marks around the variable name.",
   ],
- estimatedMinutes: 10,
+  estimatedMinutes: 10,
   starterCode: `first_number = 
 second_number = 
 
 `,
   validation: {
-    mode: "flexible",
-    requiredKeywords: [
-      "first_number",
-      "second_number",
-      "total",
-      "+",
-      "print(",
+    mode: "rules",
+    rules: [
+      {
+        type: "minNumericAssignments",
+        count: 2,
+      },
+      {
+        type: "computedAssignment",
+        id: "total",
+        operator: "+",
+        operands: "previousNumericAssignments",
+        message:
+          "Create a total variable by adding your number variables together.",
+      },
+      {
+        type: "printComputedAssignment",
+        computedAssignmentId: "total",
+      },
     ],
-    minPrintStatements: 1,
-  }
+  },
 };
