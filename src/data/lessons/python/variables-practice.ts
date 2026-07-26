@@ -29,8 +29,13 @@ print()
 print()
 `,
   validation: {
-    mode: "flexible",
-    requiredKeywords: ["print(", "power_level", "robot_name"],
-    minPrintStatements: 2,
+    mode: "rules",
+    rules: [
+      { type: "assignmentExists", name: "robot_name", valueType: "string" },
+      { type: "assignmentExists", name: "power_level", valueType: "numeric" },
+      { type: "minPrintCalls", count: 2 },
+      { type: "printIdentifier", name: "robot_name" },
+      { type: "printIdentifier", name: "power_level" },
+    ],
   },
 };
