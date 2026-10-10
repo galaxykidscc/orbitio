@@ -73,6 +73,9 @@ export default function PythonLessonView({
           setValidationMessage("Your program is waiting for your answer.");
           inputResolver.current = resolve;
         }),
+        (printedOutput) => {
+          if (!controller.signal.aborted) setOutput(printedOutput);
+        },
       );
       if (controller.signal.aborted) return;
       setOutput((result.displayOutput ?? result.output) + (result.error ? `\nPython Error:\n${result.error}` : "") || "Done.");
@@ -231,9 +234,27 @@ export default function PythonLessonView({
               </p>
             )}
 
+            {lesson.example && (
+              <section className="mt-5 border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-bold text-violet-800">{lesson.example.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-700">{lesson.example.explanation}</p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="min-w-0 rounded-lg bg-slate-950 p-3">
+                    <h4 className="text-xs font-semibold text-white">Example code</h4>
+                    <pre className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-slate-100"><code>{lesson.example.code}</code></pre>
+                  </div>
+                  <div className="min-w-0 rounded-lg bg-slate-900 p-3">
+                    <h4 className="text-xs font-semibold text-white">Example output</h4>
+                    <pre className="mt-2 whitespace-pre-wrap break-words text-xs leading-5 text-emerald-300">{lesson.example.output}</pre>
+                    {lesson.example.outputNote && <p className="mt-3 text-xs leading-5 text-slate-300">{lesson.example.outputNote}</p>}
+                  </div>
+                </div>
+              </section>
+            )}
+
             <div className="mt-5 border-t border-slate-200 pt-4">
               <h3 className="text-sm font-bold uppercase tracking-wide text-violet-800">
-                Objective
+                {lesson.example ? "Your Exercise" : "Objective"}
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-700">
                 {lesson.objective}

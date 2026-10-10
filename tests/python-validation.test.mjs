@@ -7,7 +7,7 @@ import ts from "typescript";
 
 const lessons = {};
 for (const file of readdirSync("src/data/lessons/python")) {
-  if (file === "index.ts" || file === "validate-python-lesson.ts") continue;
+  if (!file.endsWith(".ts") || file === "index.ts" || file === "validate-python-lesson.ts") continue;
   const source = readFileSync(`src/data/lessons/python/${file}`, "utf8");
   const context = { exports: {} };
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, context);
@@ -33,11 +33,14 @@ const good = {
   "how-to-get-user-input": 'user_name = input("Your name? ")\nprint(user_name)',
   "nova's-status-report": 'robot_name = "Nova"\nlocation = "forest crash site"\npower_level = 85\nprint("Hello!")\nprint(robot_name)\nprint(location)\nprint(power_level)',
 };
+good["novas-century-scanner"] = lessons["novas-century-scanner"].validation.solution
+  .replaceAll("__name_prompt__", '"Your name? "')
+  .replaceAll("__age_prompt__", '"Your age? "');
 for (const [slug, lesson] of Object.entries(lessons)) {
   test(`${slug}: accepts solution with comments, rejects blank and starter`, () => {
-    assert.equal(run(`# A comment\n${good[slug]}\n`, lesson.validation, ["Alex"]).passed, true);
-    assert.equal(run("", lesson.validation, ["Alex"]).passed, false);
-    assert.equal(run(lesson.starterCode, lesson.validation, ["Alex"]).passed, false);
+    assert.equal(run(`# A comment\n${good[slug]}\n`, lesson.validation, ["Alex", "10"]).passed, true);
+    assert.equal(run("", lesson.validation, ["Alex", "10"]).passed, false);
+    assert.equal(run(lesson.starterCode, lesson.validation, ["Alex", "10"]).passed, false);
   });
 }
 test("types, exact lesson values, and printed variables matter", () => {
@@ -129,6 +132,17 @@ test("worker timeout, completion, and cancellation terminate the runtime", async
   assert.equal((await completed).passed, true);
   assert.equal(done.worker().terminated, true);
 
+  const scanner = harness();
+  const outputs = [];
+  const scannerRun = scanner.run('', lessons['novas-century-scanner'], [], undefined, undefined,
+    (output) => outputs.push(output));
+  scanner.worker().onmessage({ data: { type: 'ready' } });
+  assert.equal(scanner.timer().delay, 10000);
+  scanner.worker().onmessage({ data: { type: 'output', output: 'Please wait while I think....\n' } });
+  assert.deepEqual(outputs, ['Please wait while I think....\n']);
+  scanner.worker().onmessage({ data: { type: 'result', result: { passed: true } } });
+  assert.equal((await scannerRun).passed, true);
+
   const interactive = harness();
   let submit;
   const interactiveResult = interactive.run('', lessons['how-to-get-user-input'], [], undefined,
@@ -194,4 +208,38 @@ print(json.dumps(dict(result, prompts=prompts)))
   assert.equal(actual.error, null);
   assert.deepEqual(actual.prompts, [['First? ', 'Welcome\n'], ['Second? ', 'Welcome\nFirst? \n']]);
   assert.equal(actual.displayOutput, "Welcome\nFirst? \nSecond? \n'' second\n");
+});
+
+
+test("century scanner accepts alternatives and rejects missing sleep, wrong delay, and hardcoded year", () => {
+  const lesson = lessons["novas-century-scanner"];
+  for (const alternative of lesson.validation.alternatives) {
+    const code = alternative.replaceAll("__name_prompt__", '"Name? "').replaceAll("__age_prompt__", '"Age? "');
+    assert.equal(run(code, lesson.validation, ["Taylor", "25"]).passed, true);
+  }
+  for (const code of [
+    good[lesson.slug].replace("time.sleep(3)", "time.sleep(0)"),
+    good[lesson.slug].replace("time.sleep(3)", ""),
+    good[lesson.slug].replace("current_year + (100 - age)", "2116"),
+  ]) {
+    assert.equal(run(code, lesson.validation, ["Luna", "10"]).passed, false);
+  }
+});
+
+test("century scanner streams its thinking message before the actual pause and skips grading delays", () => {
+  const result = spawnSync("python3", ["-c", `
+import json, runpy, sys, time
+engine = runpy.run_path('public/python/validate.py')
+lesson = json.load(sys.stdin)
+code = lesson['validation']['solution'].replace('__name_prompt__', '"Name? "').replace('__age_prompt__', '"Age? "')
+updates = []
+started = time.monotonic()
+result = engine['validate'](code, lesson['validation'], ['Luna', '10'], on_output=lambda output: updates.append([time.monotonic() - started, output]))
+assert result['passed'], result
+assert updates[0][0] < 1
+assert updates[-1][0] - updates[0][0] >= 2.9
+assert time.monotonic() - started < 6, 'Hidden checks should not repeat the delay'
+print('ok')
+`], { input: JSON.stringify(lessons['novas-century-scanner']), encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
 });
