@@ -1,5 +1,8 @@
 """Shared lesson runner, executed in a disposable Pyodide worker or by tests."""
 import ast
+import asyncio
+import inspect
+import sys
 import builtins
 import contextlib
 import copy
@@ -10,19 +13,48 @@ import traceback
 
 
 class OutputBuffer(io.StringIO):
-    def __init__(self):
+    def __init__(self, on_output=None):
         super().__init__()
+        self.on_output = on_output
         self.display = io.StringIO()
 
     def write(self, text):
         if self.tell() + len(text) > 50000:
             raise RuntimeError("Too much output. Check your print statements or loops.")
         self.display.write(text)
+        if self.on_output and "\n" in text:
+            self.on_output(self.display.getvalue())
         return super().write(text)
 
 
-def execute(code, inputs, input_reader=None):
-    output = OutputBuffer()
+class SkipGradingSleeps(ast.NodeTransformer):
+    """Keep the visible pause; avoid repeating it in hidden grading runs."""
+    def visit_Call(self, node):
+        self.generic_visit(node)
+        if (isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "time" and node.func.attr == "sleep"
+                and len(node.args) == 1 and not node.keywords
+                and isinstance(node.args[0], ast.Constant)
+                and type(node.args[0].value) in (int, float)):
+            node.args[0] = ast.copy_location(ast.Constant(value=0), node.args[0])
+        return node
+
+    def visit_Await(self, node):
+        self.generic_visit(node)
+        call = node.value
+        if (isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute)
+                and isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "asyncio" and call.func.attr == "sleep"
+                and len(call.args) == 1 and not call.keywords
+                and isinstance(call.args[0], ast.Constant)
+                and type(call.args[0].value) in (int, float)):
+            call.args[0] = ast.copy_location(ast.Constant(value=0), call.args[0])
+        return node
+
+
+def execute(code, inputs, input_reader=None, on_output=None, grading=False):
+    output = OutputBuffer(on_output)
     answers = iter(inputs)
 
     def read_input(prompt=""):
@@ -43,7 +75,16 @@ def execute(code, inputs, input_reader=None):
     error = None
     try:
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
-            exec(compile(code, "<student>", "exec"), namespace)
+            tree = ast.parse(code) if isinstance(code, str) else copy.deepcopy(code)
+            if grading:
+                tree = ast.fix_missing_locations(SkipGradingSleeps().visit(tree))
+            value = eval(compile(tree, "<student>", "exec", flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT), namespace)
+            if inspect.isawaitable(value):
+                if sys.platform == "emscripten":
+                    from pyodide.ffi import run_sync
+                    run_sync(value)
+                else:
+                    asyncio.run(value)
     except BaseException as exc:
         error = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
     return {"output": output.getvalue(), "displayOutput": output.display.getvalue(), "error": error}
@@ -106,7 +147,7 @@ def normalize(output):
     return output.replace("\r\n", "\n").rstrip("\n")
 
 
-def validate(code, validation, inputs=None, input_reader=None):
+def validate(code, validation, inputs=None, input_reader=None, on_output=None):
     inputs = list(inputs or [])
 
     def record_input(prompt, output):
@@ -115,7 +156,7 @@ def validate(code, validation, inputs=None, input_reader=None):
             inputs.append(answer)
         return answer
 
-    first = execute(code, inputs, record_input if input_reader else None)
+    first = execute(code, inputs, record_input if input_reader else None, on_output)
     result = dict(first, passed=False, message="Fix the Python error, then run the mission again.")
     if first["error"]:
         return result
@@ -137,10 +178,10 @@ def validate(code, validation, inputs=None, input_reader=None):
     # Check the user's run as well as every repeatable scenario.
     cases = [{"inputs": inputs or [], "label": "your input"}] + validation.get("cases", [])
     for index, case in enumerate(cases):
-        expected = execute(solution, case["inputs"])
+        expected = execute(solution, case["inputs"], grading=True)
         if expected["error"]:
             raise ValueError("The lesson solution could not run for " + case["label"])
-        actual = first if index == 0 else execute(code, case["inputs"])
+        actual = first if index == 0 else execute(code, case["inputs"], grading=True)
         if actual["error"]:
             result.update(error=actual["error"], message="Python error while checking " + case["label"] + ".")
             return result
@@ -157,10 +198,11 @@ def validate_request(payload):
 
 
 def validate_interactive_request(payload):
-    from js import requestLessonInput
+    from js import requestLessonInput, publishLessonOutput
     from pyodide.ffi import run_sync
     request = json.loads(payload)
     return json.dumps(validate(
         request["code"], request["validation"],
         input_reader=lambda prompt, output: run_sync(requestLessonInput(prompt, output)),
+        on_output=publishLessonOutput,
     ))

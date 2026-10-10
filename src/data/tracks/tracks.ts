@@ -26,7 +26,7 @@ export const tracks: Track[] = [
     title: "Python Basics",
     description: "Use Python to print messages, store values, and solve small puzzles.",
     lessonType: "python",
-    lessonSlugs: ["power-up-the-robot", "practice-using-print", "variables-practice", "nova's-status-report", "math-in-python", "syntax-errors", "how-to-get-user-input"],
+    lessonSlugs: ["power-up-the-robot", "practice-using-print", "variables-practice", "nova's-status-report", "math-in-python", "syntax-errors", "how-to-get-user-input", "novas-century-scanner"],
   },
   {
   slug: "scratch-basics",

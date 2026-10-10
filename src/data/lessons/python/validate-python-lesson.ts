@@ -15,6 +15,7 @@ export function validatePythonLesson(
   inputs: string[] = [],
   signal?: AbortSignal,
   onInput?: (prompt: string, output: string) => Promise<string>,
+  onOutput?: (output: string) => void,
 ): Promise<PythonValidationResult> {
   return new Promise((resolve, reject) => {
     const worker = new Worker("/python/lesson-worker.js");
@@ -35,7 +36,7 @@ export function validatePythonLesson(
       return;
     }
     timer = setTimeout(() => fail("Python could not load in time. Check your connection and try again."), 60000);
-    let remaining = 3000;
+    let remaining = lesson.validation.executionTimeoutMs ?? 3000;
     let started = 0;
     const resumeTimer = () => {
       started = Date.now();
@@ -56,6 +57,8 @@ export function validatePythonLesson(
         } catch {
           fail("Input cancelled.");
         }
+      } else if (data.type === "output") {
+        onOutput?.(data.output);
       } else if (data.type === "result") {
         cleanUp();
         resolve(data.result);

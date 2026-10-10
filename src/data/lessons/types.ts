@@ -12,6 +12,8 @@ export type PythonPlaceholder = {
 export type PythonLessonValidation = {
   mode: "template" | "output";
   solution: string;
+  /** Time budget for the visible run and grading, excluding user input. */
+  executionTimeoutMs?: number;
   placeholders?: Record<string, PythonPlaceholder>;
   /** Additional accepted structures; output is derived from the matched solution. */
   alternatives?: string[];
@@ -42,6 +44,13 @@ export type HtmlJsLesson = BaseLesson & {
 export type PythonLesson = BaseLesson & {
   type: "python";
   starterCode: string;
+  example?: {
+    title: string;
+    explanation: string;
+    code: string;
+    output: string;
+    outputNote?: string;
+  };
   validation: PythonLessonValidation;
 };
 

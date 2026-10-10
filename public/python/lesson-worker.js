@@ -1,5 +1,6 @@
 /* A fresh worker for each Run isolates Python state and permits hard timeouts. */
 let pendingInput;
+self.publishLessonOutput = (output) => self.postMessage({ type: "output", output });
 self.requestLessonInput = (prompt, output) => new Promise((resolve) => {
   pendingInput = resolve;
   self.postMessage({ type: "input", prompt, output });
