@@ -15,7 +15,7 @@ export default function LessonRenderer({ lesson, track }: LessonRendererProps) {
     case "html-js":
       return <HtmlJsLessonView lesson={lesson} track={track} />;
     case "python":
-      return <PythonLessonView lesson={lesson} track={track} />;
+      return <PythonLessonView key={lesson.slug} lesson={lesson} track={track} />;
     case "scratch":
       return <ScratchLessonView lesson={lesson} track={track} />;
     case "roblox":

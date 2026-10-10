@@ -14,7 +14,7 @@ export const howToGetUserInput: PythonLesson = {
     "Create a variable called user_name.",
     "Use input() to ask the user for their name.",
     "Use print() to display the user_name variable.",
-    "Press Run when you are ready!",
+    "Press Run. When your program asks for your name, type it and press Enter.",
   ],
   hints: [
     "input() lets the user type an answer.",
@@ -25,8 +25,15 @@ export const howToGetUserInput: PythonLesson = {
   estimatedMinutes: 10,
   starterCode: ``,
 
-    validation: {
-    mode: "rules",
-    rules: [] 
+  validation: {
+    mode: "template",
+    solution: `user_name = input(__prompt__)
+print(user_name)`,
+    placeholders: { __prompt__: { type: "string", pattern: ".*\\S.*" } },
+    cases: [
+      { label: "a first name", inputs: ["Alex"] },
+      { label: "a different name", inputs: ["Sam Rivera"] },
+    ],
+    message: "Ask for a name with input(), store it in user_name, and print user_name.",
   },
 };

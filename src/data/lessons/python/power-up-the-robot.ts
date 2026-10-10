@@ -13,7 +13,7 @@ export const powerUpTheRobot: PythonLesson = {
   steps: [
     "Print a greeting for the robot.",
     "Create a variable named robot_name.",
-    "Print a ready message that uses the robot name.",
+    "Print the robot_name variable followed by the text is ready. (including the period).",
   ],
   hints: [
     "Use print() to show text in Python.",
@@ -27,7 +27,22 @@ robot_name = "Nova"
 print(robot_name, "is waiting for instructions.")
 `,
   validation: {
-    mode: "rules",
-    rules: [],
+    mode: "template",
+    solution: `print(__greeting__)
+robot_name = __name__
+print(robot_name, "is ready.")`,
+    alternatives: [
+      `print(__greeting__)
+robot_name = __name__
+print(f"{robot_name} is ready.")`,
+      `print(__greeting__)
+robot_name = __name__
+print(robot_name + " is ready.")`,
+    ],
+    placeholders: {
+      __greeting__: { type: "string", pattern: ".*\\b(?:hello|hi|hey)\\b.*" },
+      __name__: { type: "string", pattern: ".*\\S.*" },
+    },
+    message: "Print a greeting, store the robot's name in robot_name, then print its name followed by is ready.",
   },
 };
