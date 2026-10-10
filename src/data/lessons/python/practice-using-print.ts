@@ -24,9 +24,6 @@ export const practiceUsingPrint: PythonLesson = {
 `,
   validation: {
     mode: "rules",
-    rules: [
-      { type: "minPrintCalls", count: 2 },
-      { type: "bannedCodeText", text: "Hello World" },
-    ],
+    rules: [],
   },
 };

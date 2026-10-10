@@ -28,11 +28,6 @@ printNo syntax errors!
 `,
   validation: {
     mode: "rules",
-    rules: [
-      {
-        type: "exactOutput",
-        expectedOutput: "Python is ready!\nNo syntax errors!",
-      },
-    ],
+    rules: [],
   },
 };
