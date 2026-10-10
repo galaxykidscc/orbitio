@@ -31,23 +31,6 @@ second_number =
 `,
   validation: {
     mode: "rules",
-    rules: [
-      {
-        type: "minNumericAssignments",
-        count: 2,
-      },
-      {
-        type: "computedAssignment",
-        id: "total",
-        operator: "+",
-        operands: "previousNumericAssignments",
-        message:
-          "Create a total variable by adding your number variables together.",
-      },
-      {
-        type: "printComputedAssignment",
-        computedAssignmentId: "total",
-      },
-    ],
+    rules: [],
   },
 };

@@ -28,11 +28,6 @@ print(robot_name, "is waiting for instructions.")
 `,
   validation: {
     mode: "rules",
-    rules: [
-      { type: "assignmentExists", name: "robot_name", valueType: "string" },
-      { type: "minPrintCalls", count: 2 },
-      { type: "printIdentifier", name: "robot_name" },
-      { type: "bannedCodeText", text: "waiting for instructions" },
-    ],
+    rules: [],
   },
 };

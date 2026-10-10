@@ -27,7 +27,6 @@ export const howToGetUserInput: PythonLesson = {
 
     validation: {
     mode: "rules",
-    rules: [
-    ]
+    rules: [] 
   },
 };
