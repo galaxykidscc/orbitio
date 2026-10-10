@@ -14,7 +14,7 @@ export const mathInPython: PythonLesson = {
     "Set the first_number equal to 40.",
     "Set the second_number equal to 25.",
     "Create the total_number variable that adds first_number and second_number together.",
-    "Use print() to display the total variable.",
+    "Use print() to display the total_number variable.",
     "Press Run when you are ready!",
   ],
   hints: [
@@ -30,7 +30,11 @@ second_number =
 
 `,
   validation: {
-    mode: "rules",
-    rules: [],
+    mode: "template",
+    solution: `first_number = 40
+second_number = 25
+total_number = first_number + second_number
+print(total_number)`,
+    message: "Set the numbers to 40 and 25, add them into total_number, and print total_number.",
   },
 };

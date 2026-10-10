@@ -29,7 +29,12 @@ print()
 print()
 `,
   validation: {
-    mode: "rules",
-    rules: [],
+    mode: "template",
+    solution: `robot_name = "Nova"
+power_level = __power__
+print(robot_name)
+print(power_level)`,
+    placeholders: { __power__: { type: "number" } },
+    message: "Set robot_name to Nova, give power_level a number, and print each variable in order.",
   },
 };

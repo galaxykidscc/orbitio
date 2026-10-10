@@ -2,62 +2,22 @@
 
 export type LessonType = "html-js" | "python" | "scratch" | "roblox";
 
-export type PythonValidationRule =
-  | {
-      type: "exactOutput";
-      expectedOutput: string;
-      ignoreWhitespace?: boolean;
-      message?: string;
-    }
-  | {
-      type: "requiredCodeText";
-      text: string;
-      message?: string;
-    }
-  | {
-      type: "bannedCodeText";
-      text: string;
-      message?: string;
-    }
-  | {
-      type: "minPrintCalls";
-      count: number;
-      message?: string;
-    }
-  | {
-      type: "assignmentExists";
-      name: string;
-      valueType?: "any" | "numeric" | "string";
-      message?: string;
-    }
-  | {
-      type: "printIdentifier";
-      name: string;
-      message?: string;
-    }
-  | {
-      type: "minNumericAssignments";
-      count: number;
-      message?: string;
-    }
-  | {
-      type: "computedAssignment";
-      id: string;
-      operator: "+" | "-" | "*" | "/";
-      operands: "previousNumericAssignments";
-      message?: string;
-    }
-  | {
-      type: "printComputedAssignment";
-      computedAssignmentId: string;
-      message?: string;
-    };
+/** Placeholder names are valid Python identifiers used inside the solution. */
+export type PythonPlaceholder = {
+  type: "integer" | "number" | "string" | "identifier";
+  /** Optional full-string regular expression for text values (case insensitive). */
+  pattern?: string;
+};
 
-export type PythonLessonValidation =
-  {
-    mode: "rules";
-    rules: PythonValidationRule[];
-  };
+export type PythonLessonValidation = {
+  mode: "template" | "output";
+  solution: string;
+  placeholders?: Record<string, PythonPlaceholder>;
+  /** Additional accepted structures; output is derived from the matched solution. */
+  alternatives?: string[];
+  cases?: { inputs: string[]; label: string }[];
+  message?: string;
+};
 
 export type BaseLesson = {
   id: string;

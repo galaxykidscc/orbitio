@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -13,59 +14,10 @@ import { validatePythonLesson } from "@/src/data/lessons/python/validate-python-
 import type { PythonLesson } from "@/src/data/lessons/types";
 import type { Track } from "@/src/data/tracks/tracks";
 
-declare global {
-  interface Window {
-    loadPyodide?: (options: { indexURL: string }) => Promise<PyodideRuntime>;
-  }
-}
-
-type PyodideRuntime = {
-  setStdout: (options: { batched: (text: string) => void }) => void;
-  runPythonAsync: (code: string) => Promise<unknown>;
-};
-
 type PythonLessonViewProps = {
   lesson: PythonLesson;
   track: Track;
 };
-
-let pyodidePromise: Promise<PyodideRuntime> | null = null;
-
-async function getPyodide() {
-  if (!window.loadPyodide) {
-    throw new Error("Python is still loading. Try again in a moment.");
-  }
-
-  if (!pyodidePromise) {
-    pyodidePromise = window.loadPyodide({
-      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.3/full/",
-    });
-  }
-
-  return pyodidePromise;
-}
-
-async function runPythonCode(code: string): Promise<string> {
-  const pyodide = await getPyodide();
-  let output = "";
-
-  pyodide.setStdout({
-    batched: (text: string) => {
-      output += text + "\n";
-    },
-  });
-
-  try {
-    await pyodide.runPythonAsync(code);
-    return output.trim() || "Done.";
-  } catch (error: unknown) {
-    return `Python Error:\n${getErrorMessage(error)}`;
-  }
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
 
 const editorOptions = {
   minimap: { enabled: false },
@@ -86,6 +38,14 @@ export default function PythonLessonView({
   );
   const [missionComplete, setMissionComplete] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [inputPrompt, setInputPrompt] = useState<string | null>(null);
+  const [answer, setAnswer] = useState("");
+  const inputResolver = useRef<((answer: string) => void) | null>(null);
+  const activeRun = useRef<AbortController | null>(null);
+  useEffect(() => () => {
+    activeRun.current?.abort();
+    inputResolver.current?.("");
+  }, []);
   const [editorWidth, setEditorWidth] = useState(62);
   const [instructionsHeight, setInstructionsHeight] = useState(58);
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -98,34 +58,50 @@ export default function PythonLessonView({
     setOutput("Running Python...");
     setValidationMessage("Checking your mission...");
 
+    const controller = new AbortController();
+    activeRun.current?.abort();
+    activeRun.current = controller;
+    setMissionComplete(false);
+
     try {
-      const nextOutput = await runPythonCode(code);
-      setOutput(nextOutput);
-
-      if (nextOutput.startsWith("Python Error:")) {
-        setMissionComplete(false);
-        setValidationMessage("Fix the Python error, then run the mission again.");
-        return;
-      }
-
-      const validationResult = validatePythonLesson(code, nextOutput, lesson);
-      setMissionComplete(validationResult.passed);
-      setValidationMessage(validationResult.message);
-
-      if (validationResult.passed) {
-        completeLesson(lesson.slug);
-      }
+      const result = await validatePythonLesson(
+        code, lesson, [], controller.signal,
+        (prompt, printedOutput) => new Promise<string>((resolve) => {
+          setOutput(printedOutput);
+          setInputPrompt(prompt || "Enter a value:");
+          setAnswer("");
+          setValidationMessage("Your program is waiting for your answer.");
+          inputResolver.current = resolve;
+        }),
+      );
+      if (controller.signal.aborted) return;
+      setOutput((result.displayOutput ?? result.output) + (result.error ? `\nPython Error:\n${result.error}` : "") || "Done.");
+      setMissionComplete(result.passed);
+      setValidationMessage(result.message);
+      if (result.passed) completeLesson(lesson.slug);
     } catch (error: unknown) {
-      setOutput(`Python Error:\n${getErrorMessage(error)}`);
+      if (controller.signal.aborted) return;
+      setValidationMessage(error instanceof Error ? error.message : String(error));
+      setOutput("Run stopped.");
       setMissionComplete(false);
-      setValidationMessage("Fix the Python error, then run the mission again.");
     } finally {
-      setIsRunning(false);
+      if (!controller.signal.aborted) {
+        activeRun.current = null;
+        setInputPrompt(null);
+        inputResolver.current = null;
+        setIsRunning(false);
+      }
     }
   };
 
   const handleReset = () => {
+    activeRun.current?.abort();
+    activeRun.current = null;
+    setIsRunning(false);
     setCode(lesson.starterCode);
+    setInputPrompt(null);
+    inputResolver.current?.("");
+    inputResolver.current = null;
     setOutput("Click Run to execute Python.");
     setValidationMessage("Run your code to check this mission.");
     setMissionComplete(false);
@@ -284,7 +260,7 @@ export default function PythonLessonView({
                             <summary className="cursor-pointer font-semibold text-amber-950">
                               Show hint
                             </summary>
-                            <p className="mt-2 leading-5 text-amber-900">
+                            <p className="mt-2 whitespace-pre-line leading-5 text-amber-900">
                               {hint}
                             </p>
                           </details>
@@ -317,6 +293,24 @@ export default function PythonLessonView({
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto bg-slate-900 p-4 font-mono text-sm text-emerald-300">
               <pre className="whitespace-pre-wrap">{output}</pre>
+              {inputPrompt !== null && (
+                <form className="mt-3" onSubmit={(event) => {
+                  event.preventDefault();
+                  const resolve = inputResolver.current;
+                  inputResolver.current = null;
+                  setInputPrompt(null);
+                  setValidationMessage("Checking your mission...");
+                  resolve?.(answer);
+                }}>
+                  <label htmlFor="python-answer" className="mb-2 block">{inputPrompt}</label>
+                  <div className="flex gap-2">
+                    <input id="python-answer" autoFocus autoComplete="off"
+                      className="min-w-0 flex-1 rounded border border-slate-500 bg-slate-950 px-3 py-2 text-white"
+                      value={answer} onChange={(event) => setAnswer(event.target.value)} />
+                    <button type="submit" className="rounded bg-emerald-400 px-4 py-2 font-semibold text-slate-950">Submit</button>
+                  </div>
+                </form>
+              )}
             </div>
             <div
               className={`border-t px-4 py-3 text-sm ${

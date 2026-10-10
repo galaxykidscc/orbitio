@@ -11,7 +11,7 @@ export const practiceUsingPrint: PythonLesson = {
   objective:
     "Right now Nova can only say Hello World. So you need to fix the print statement so that they can say hello to you instead and say its name.",
   steps: [
-    "Change the Hello World so that Nova says hello to you (Use your own name).",
+    "Change Hello World to a greeting such as Hello, Alex! using your own name.",
     "Create a new print statement so that Nova says their name.",
     "Press Run when you are ready!",
   ],
@@ -23,7 +23,13 @@ export const practiceUsingPrint: PythonLesson = {
 
 `,
   validation: {
-    mode: "rules",
-    rules: [],
+    mode: "template",
+    solution: `print(__greeting__)
+print(__introduction__)`,
+    placeholders: {
+      __greeting__: { type: "string", pattern: "(?!.*\\bworld\\b)(?:hello|hi|hey)[ ,!]+\\S.*" },
+      __introduction__: { type: "string", pattern: ".*\\bNova\\b.*" },
+    },
+    message: "Print a greeting such as Hello, Alex! using your name, then a message that names Nova.",
   },
 };

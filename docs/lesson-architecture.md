@@ -47,7 +47,7 @@ All lessons share these base fields:
 Each lesson type also has fields for its specific workspace:
 
 - `html-js`: `starterHtml`, `starterCss`, and `starterJs`
-- `python`: `starterCode` and optional `expectedOutput`
+- `python`: `starterCode` and `validation`
 - `scratch`: `projectPrompt`, `instructionSections`, and `checklist`
 - `roblox`: `studioSteps` and optional `scriptStarter`
 
@@ -234,3 +234,71 @@ You will need to:
   not appear in the mission chain until a track references it.
 - Do not reuse slugs. Slugs are used for URLs and progress.
 - Do not put Supabase reads or writes inside static lesson data files.
+
+## Python solution validation
+
+Each Python lesson owns its solution and validation settings. The old `rules`
+array has been removed. For a beginner exercise, use:
+
+```ts
+validation: {
+  mode: "template",
+  solution: `robot_name = "Nova"
+power_level = __power__
+print(robot_name)
+print(power_level)`,
+  placeholders: { __power__: { type: "number" } },
+  message: "Create the two variables, then print each one in order.",
+}
+```
+
+The solution is a Python template. Placeholder names are Python identifiers;
+they can represent a `string`, `integer`, `number` (integer or float), or
+`identifier` (a variable name). Repeated placeholders must match consistently.
+Numbers are literals, including negative values, not arbitrary expressions;
+booleans do not count as numbers. A string placeholder can optionally have a
+case-insensitive full-string Python regular expression in `pattern` (escape
+backslashes for the surrounding TypeScript string).
+
+Python's AST matches structure, ignoring comments, blank lines, quote style,
+and ordinary formatting differences. Statement order and structure still
+matter. Use `alternatives` for additional accepted solution templates, or use
+`mode: "output"` when the implementation should be unrestricted. Avoid adding
+many alternatives to approximate all equivalent Python programs.
+
+After matching, the engine fills the solution with the captured values and
+compares its output with the student's output. Exact constants in the solution
+stay exact. Output comparison normalizes line endings and trailing newlines,
+but preserves spaces inside output. Error results are separate from output;
+Python tracebacks and output preceding an error are displayed.
+
+Input exercises add repeatable cases:
+
+```ts
+cases: [
+  { label: "a first name", inputs: ["Alex"] },
+  { label: "another name", inputs: ["Sam Rivera"] },
+]
+```
+
+During Run, each `input()` displays the student's prompt and an empty answer
+field in the output panel. Submit or Enter resumes the same Python execution.
+The visible transcript keeps each prompt on its own line without echoing the
+submitted answer; answers appear only when the program prints them. Graded
+output excludes prompts. Recorded answers and configured cases are used for checks without
+showing test names or asking extra questions. Waiting for an answer pauses the
+execution timer. This uses Pyodide's JSPI `run_sync` bridge in supported browsers. Each
+execution uses a fresh namespace. The worker is discarded after each Run,
+on reset, or when leaving the lesson. Execution has a three-second total
+limit after Python initialization; output is capped at 50,000 characters.
+
+For future larger programs, use `mode: "output"`, a runnable reference
+`solution` without placeholders, and multiple input cases. This checks
+observable behavior without checking source structure. These cases must be
+deterministic; random game setup must be controlled by the lesson's interface.
+There are no game lessons in the current Python track. This browser-side
+validator is for learning feedback, not tamper-proof assessment.
+
+Run `npm run test:python` (requires Python 3) to exercise the same Python
+engine used by the browser against the actual lesson definitions. Also run
+`npm run lint` and `npx tsc --noEmit --pretty false`.

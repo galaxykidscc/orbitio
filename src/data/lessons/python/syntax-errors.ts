@@ -27,7 +27,9 @@ export const syntaxErrors: PythonLesson = {
 printNo syntax errors!
 `,
   validation: {
-    mode: "rules",
-    rules: [],
+    mode: "template",
+    solution: `print("Python is ready!")
+print("No syntax errors!")`,
+    message: "Print both original messages in order without changing their text.",
   },
 };
