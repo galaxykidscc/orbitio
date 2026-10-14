@@ -37,6 +37,7 @@ export default function PythonLessonView({
     "Run your code to check this mission."
   );
   const [missionComplete, setMissionComplete] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
@@ -57,6 +58,7 @@ export default function PythonLessonView({
     setIsRunning(true);
     setOutput("Running Python...");
     setValidationMessage("Checking your mission...");
+    setValidationError(null);
 
     const controller = new AbortController();
     activeRun.current?.abort();
@@ -78,7 +80,8 @@ export default function PythonLessonView({
         },
       );
       if (controller.signal.aborted) return;
-      setOutput((result.displayOutput ?? result.output) + (result.error ? `\nPython Error:\n${result.error}` : "") || "Done.");
+      setOutput((result.displayOutput ?? result.output) + (result.error ? `\nError in your program:\n${result.error}` : "") || "Done.");
+      setValidationError(result.validationError ?? null);
       setMissionComplete(result.passed);
       setValidationMessage(result.message);
       if (result.passed) completeLesson(lesson.slug);
@@ -107,6 +110,7 @@ export default function PythonLessonView({
     inputResolver.current = null;
     setOutput("Click Run to execute Python.");
     setValidationMessage("Run your code to check this mission.");
+    setValidationError(null);
     setMissionComplete(false);
   };
 
@@ -344,6 +348,11 @@ export default function PythonLessonView({
                 {missionComplete ? "Mission validated" : "Validation"}
               </p>
               <p className="mt-1">{validationMessage}</p>
+              {validationError && (
+                <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-amber-200">
+                  {validationError}
+                </pre>
+              )}
               {missionComplete && nextLessonSlug && (
                 <Link
                   href={`/missions/${track.slug}/${nextLessonSlug}`}
