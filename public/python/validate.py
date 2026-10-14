@@ -6,6 +6,7 @@ import sys
 import builtins
 import contextlib
 import copy
+from decimal import Decimal, InvalidOperation
 import io
 import json
 import re
@@ -53,6 +54,51 @@ class SkipGradingSleeps(ast.NodeTransformer):
         return node
 
 
+def format_student_error(exc, code):
+    """Show only the student's location, with advice for common beginner errors."""
+    line = exc.lineno if isinstance(exc, SyntaxError) else None
+    if line is None:
+        for frame in traceback.extract_tb(exc.__traceback__):
+            if frame.filename == "<student>":
+                line = frame.lineno
+    kind = type(exc).__name__
+    detail = exc.msg if isinstance(exc, SyntaxError) else str(exc)
+    hint = None
+    if isinstance(exc, IndentationError):
+        hint = "Check the spaces at the beginning of this line. Use consistent indentation inside each block."
+    elif isinstance(exc, SyntaxError):
+        hint = "Check this line and the line above it for missing quotation marks, parentheses, or a colon."
+    elif isinstance(exc, NameError):
+        hint = "Check the spelling and create the variable before using it. Put quotation marks around text."
+    elif isinstance(exc, ZeroDivisionError):
+        hint = "The number you divide by must not be zero."
+    elif isinstance(exc, ValueError) and detail.startswith("invalid literal for int()"):
+        value = detail.partition(": ")[2]
+        detail = f"int() could not convert {value} to a whole number."
+        hint = "If the input can include decimals, use float(input(...)). Enter only a number, without extra words."
+    elif isinstance(exc, ValueError) and detail.startswith("could not convert string to float"):
+        hint = "Enter a number such as 10 or 2.5, without extra words."
+    elif isinstance(exc, TypeError):
+        hint = "Check the types of the values on this line. Convert input() text with int() or float() before doing math."
+    elif isinstance(exc, EOFError):
+        hint = "Your program asked for more answers than this lesson provides. Check how many input() calls you need."
+    elif isinstance(exc, IndexError):
+        hint = "Check that the position exists in your list or text. The first position is 0."
+    elif isinstance(exc, KeyError):
+        hint = "Check that this key exists in your dictionary before looking it up."
+    elif isinstance(exc, ModuleNotFoundError):
+        hint = "Check the module name. Some Python packages are unavailable in this browser runner."
+    location = f"Line {line}: " if line is not None else ""
+    parts = [f"{location}{kind}: {detail}"]
+    if line is not None and isinstance(code, str):
+        lines = code.splitlines()
+        if 0 < line <= len(lines):
+            parts.append("  " + lines[line - 1].strip())
+    if hint:
+        parts.append("Tip: " + hint)
+    return "\n".join(parts)
+
+
 def execute(code, inputs, input_reader=None, on_output=None, grading=False):
     output = OutputBuffer(on_output)
     answers = iter(inputs)
@@ -75,7 +121,7 @@ def execute(code, inputs, input_reader=None, on_output=None, grading=False):
     error = None
     try:
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
-            tree = ast.parse(code) if isinstance(code, str) else copy.deepcopy(code)
+            tree = ast.parse(code, filename="<student>") if isinstance(code, str) else copy.deepcopy(code)
             if grading:
                 tree = ast.fix_missing_locations(SkipGradingSleeps().visit(tree))
             value = eval(compile(tree, "<student>", "exec", flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT), namespace)
@@ -86,7 +132,7 @@ def execute(code, inputs, input_reader=None, on_output=None, grading=False):
                 else:
                     asyncio.run(value)
     except BaseException as exc:
-        error = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        error = format_student_error(exc, code)
     return {"output": output.getvalue(), "displayOutput": output.display.getvalue(), "error": error}
 
 
@@ -147,6 +193,22 @@ def normalize(output):
     return output.replace("\r\n", "\n").rstrip("\n")
 
 
+def outputs_match(actual, expected, comparison):
+    if comparison == "numeric":
+        # Require one number, not extra messages or multiple printed answers.
+        number_pattern = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
+        actual = normalize(actual).strip()
+        expected = normalize(expected).strip()
+        if not re.fullmatch(number_pattern, actual) or not re.fullmatch(number_pattern, expected):
+            return False
+        try:
+            actual_number, expected_number = Decimal(actual), Decimal(expected)
+            return actual_number.is_finite() and expected_number.is_finite() and actual_number == expected_number
+        except InvalidOperation:
+            return False
+    return normalize(actual) == normalize(expected)
+
+
 def validate(code, validation, inputs=None, input_reader=None, on_output=None):
     inputs = list(inputs or [])
 
@@ -183,9 +245,14 @@ def validate(code, validation, inputs=None, input_reader=None, on_output=None):
             raise ValueError("The lesson solution could not run for " + case["label"])
         actual = first if index == 0 else execute(code, case["inputs"], grading=True)
         if actual["error"]:
-            result.update(error=actual["error"], message="Python error while checking " + case["label"] + ".")
+            answers = ", ".join(repr(answer) for answer in case["inputs"])
+            check = case["label"] + ("; input: " + answers if answers else "")
+            result.update(
+                validationError=actual["error"],
+                message="Your run finished successfully, but an additional check failed (" + check + ").",
+            )
             return result
-        if normalize(actual["output"]) != normalize(expected["output"]):
+        if not outputs_match(actual["output"], expected["output"], validation.get("outputComparison", "exact")):
             result["message"] = "The output is not correct for " + case["label"] + ". Check what your program prints."
             return result
     result.update(passed=True, message="Mission complete!")
