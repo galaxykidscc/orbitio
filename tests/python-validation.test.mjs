@@ -25,6 +25,7 @@ print(engine['validate_request'](json.dumps(request)))
   return JSON.parse(result.stdout);
 }
 const good = {
+  "novas-repair-measurements": 'feet = int(input("How many feet? "))\ninches = feet * 12\nprint(str(feet) + " feet is equivalent to " + str(inches) + " inches congrats!")',
   "power-up-the-robot": 'print("Hello robot!")\nrobot_name = "Nova"\nprint(robot_name, "is ready.")',
   "practice-using-print": 'print("Hello, Lucretia!")\nprint("My name is Nova.")',
   "variables-practice": 'robot_name = "Nova"\npower_level = -12.5\nprint(robot_name)\nprint(power_level)',
@@ -38,11 +39,60 @@ good["novas-century-scanner"] = lessons["novas-century-scanner"].validation.solu
   .replaceAll("__age_prompt__", '"Your age? "');
 for (const [slug, lesson] of Object.entries(lessons)) {
   test(`${slug}: accepts solution with comments, rejects blank and starter`, () => {
-    assert.equal(run(`# A comment\n${good[slug]}\n`, lesson.validation, ["Alex", "10"]).passed, true);
-    assert.equal(run("", lesson.validation, ["Alex", "10"]).passed, false);
-    assert.equal(run(lesson.starterCode, lesson.validation, ["Alex", "10"]).passed, false);
+    const inputs = slug === "novas-repair-measurements" ? ["2"] : ["Alex", "10"];
+    assert.equal(run(`# A comment\n${good[slug]}\n`, lesson.validation, inputs).passed, true);
+    assert.equal(run("", lesson.validation, inputs).passed, false);
+    assert.equal(run(lesson.starterCode, lesson.validation, inputs).passed, false);
   });
 }
+test("repair measurements converts input and rejects hardcoded answers and wrong arithmetic", () => {
+  const validation = lessons["novas-repair-measurements"].validation;
+  const code = good["novas-repair-measurements"];
+  const result = run(code, validation, ["2"]);
+  assert.equal(result.passed, true);
+  assert.equal(result.output, "2 feet is equivalent to 24 inches congrats!\n");
+  for (const replacement of ["24", "feet + 12", "feet / 12"]) {
+    assert.equal(run(code.replace("feet * 12", replacement), validation, ["2"]).passed, false);
+  }
+  for (const alternative of validation.alternatives) {
+    const solution = alternative.replace("__prompt__", '"Feet? "')
+      .replaceAll("__feet__", "length").replaceAll("__inches__", "converted_length")
+      .replaceAll("__feet_message__", '" feet is equivalent to "')
+      .replaceAll("__inches_message__", '" inches congrats!"');
+    assert.equal(run(solution, validation, ["2"]).passed, true);
+    if (solution.includes("float(")) {
+      const fractional = run(solution, validation, ["2.5"]);
+      assert.equal(fractional.passed, true);
+      assert.match(fractional.output, /^2\.5\s+feet is equivalent to\s+30\.0\s+inches congrats!\n$/);
+    }
+  }
+});
+test("repair measurements accepts chosen variable names and different measurements", () => {
+  const validation = lessons["novas-repair-measurements"].validation;
+  for (const [inputName, outputName] of [["feet", "inch"], ["height", "result"], ["panel_length", "tool_length"]]) {
+    const code = `${inputName} = int(input("Measurement? "))\n${outputName} = 12 * ${inputName}\nprint(str(${inputName}) + " feet is equivalent to " + str(${outputName}) + " inches congrats!")`;
+    for (const measurement of ["3", "7", "11"]) {
+      const result = run(code, validation, [measurement]);
+      assert.equal(result.passed, true);
+      assert.equal(result.output, `${measurement} feet is equivalent to ${Number(measurement) * 12} inches congrats!\n`);
+    }
+    for (const display of [`print(${outputName})`, `print (${outputName})`, `print(${inputName})`, 'print("7 feet is equivalent to 84 inches")', `print(str(${inputName}) + " feet is equivalent to " + str(${inputName}) + " inches")`]) {
+      const incomplete = code.slice(0, code.lastIndexOf("\n") + 1) + display;
+      assert.equal(run(incomplete, validation, ["7"]).passed, false);
+    }
+  }
+});
+test("repair measurements accepts a message without a feet label", () => {
+  const code = `feet = int(input("How tall are you"))
+inch = 12 * feet
+print(str(feet) + " is equivelant to " + str(inch) + " inches")`;
+  const validation = lessons["novas-repair-measurements"].validation;
+  for (const measurement of ["2", "7"]) {
+    const result = run(code, validation, [measurement]);
+    assert.equal(result.passed, true);
+    assert.equal(result.output, `${measurement} is equivelant to ${Number(measurement) * 12} inches\n`);
+  }
+});
 test("types, exact lesson values, and printed variables matter", () => {
   const validation = lessons["variables-practice"].validation;
   for (const code of [good["variables-practice"].replace('-12.5', 'True'), good["variables-practice"].replace('-12.5', '"80"'), good["variables-practice"].replace('"Nova"', '"Wrong"'), good["variables-practice"].replace('print(power_level)', 'print(80)')]) {
