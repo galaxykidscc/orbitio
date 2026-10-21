@@ -7,6 +7,5 @@ import { variablesPractice } from "./variables-practice";
 import { syntaxErrors } from "./syntax-errors";
 import { howToGetUserInput } from "./how-to-get-user-input";
 import { novasCenturyScanner } from "./novas-century-scanner";
-import { oneHalfOfANumber } from "./one-half-of-a-number";
 
-export const pythonLessons: PythonLesson[] = [powerUpTheRobot, practiceUsingPrint, variablesPractice, novaStatusReport, mathInPython, syntaxErrors, howToGetUserInput, novasCenturyScanner, oneHalfOfANumber];
+export const pythonLessons: PythonLesson[] = [powerUpTheRobot, practiceUsingPrint, variablesPractice, novaStatusReport, mathInPython, syntaxErrors, howToGetUserInput, novasCenturyScanner];
