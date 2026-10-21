@@ -4,6 +4,7 @@ export type PythonValidationResult = {
   output: string;
   displayOutput?: string;
   error: string | null;
+  validationError?: string;
   passed: boolean;
   message: string;
 };

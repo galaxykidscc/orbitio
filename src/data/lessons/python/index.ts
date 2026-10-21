@@ -7,6 +7,5 @@ import { variablesPractice } from "./variables-practice";
 import { syntaxErrors } from "./syntax-errors";
 import { howToGetUserInput } from "./how-to-get-user-input";
 import { novasCenturyScanner } from "./novas-century-scanner";
-import { novasRepairMeasurements } from "./novas-repair-measurements";
 
-export const pythonLessons: PythonLesson[] = [powerUpTheRobot, practiceUsingPrint, variablesPractice, novaStatusReport, mathInPython, syntaxErrors, howToGetUserInput, novasCenturyScanner, novasRepairMeasurements];
+export const pythonLessons: PythonLesson[] = [powerUpTheRobot, practiceUsingPrint, variablesPractice, novaStatusReport, mathInPython, syntaxErrors, howToGetUserInput, novasCenturyScanner];

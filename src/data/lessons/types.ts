@@ -12,6 +12,8 @@ export type PythonPlaceholder = {
 export type PythonLessonValidation = {
   mode: "template" | "output";
   solution: string;
+  /** Numeric comparison accepts a single finite number, including 5 versus 5.0. */
+  outputComparison?: "exact" | "numeric";
   /** Time budget for the visible run and grading, excluding user input. */
   executionTimeoutMs?: number;
   placeholders?: Record<string, PythonPlaceholder>;

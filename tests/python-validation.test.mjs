@@ -33,6 +33,7 @@ const good = {
   "syntax-errors": 'print("Python is ready!")\nprint("No syntax errors!")',
   "how-to-get-user-input": 'user_name = input("Your name? ")\nprint(user_name)',
   "nova's-status-report": 'robot_name = "Nova"\nlocation = "forest crash site"\npower_level = 85\nprint("Hello!")\nprint(robot_name)\nprint(location)\nprint(power_level)',
+  "one-half-of-a-number": 'number = float(input("Enter a number: "))\nhalf = number / 2\nprint(half)',
 };
 good["novas-century-scanner"] = lessons["novas-century-scanner"].validation.solution
   .replaceAll("__name_prompt__", '"Your name? "')
@@ -100,6 +101,36 @@ test("types, exact lesson values, and printed variables matter", () => {
   }
   assert.equal(run(good["variables-practice"].replaceAll('"', "'").replaceAll(' = ', '='), validation).passed, true);
 });
+
+test("half-number lesson accepts equivalent calculations and numeric formatting", () => {
+  const validation = lessons["one-half-of-a-number"].validation;
+  for (const code of [
+    good["one-half-of-a-number"],
+    'value = float(input("Number? "))\nprint(value * 0.5)',
+    'value = float(input())\nprint(f"{value / 2:g}")',
+  ]) {
+    for (const input of ["10", "7", "2.5", "-8", "0", "0.125"]) {
+      assert.equal(run(code, validation, [input]).passed, true);
+    }
+  }
+});
+
+test("half-number lesson rejects hardcoded answers, truncation, and extra output", () => {
+  const validation = lessons["one-half-of-a-number"].validation;
+  for (const code of [
+    'input()\nprint(5)',
+    'number = float(input())\nprint(number // 2)',
+    'number = int(input())\nprint(number / 2)',
+    'number = float(input())\nprint(number * 2)',
+    'number = float(input())\nprint("Half:", number / 2)',
+    'number = float(input())\nprint(number / 2)\nprint(number / 2)',
+    'input()\nprint("NaN")',
+    'input()\nprint("Infinity")',
+  ]) {
+    assert.equal(run(code, validation, ["10"]).passed, false);
+  }
+  assert.equal(run('print(5)', { mode: "output", solution: 'print(5.0)' }).passed, false);
+});
 test("math requires computing the result, not printing a hardcoded answer", () => {
   assert.equal(run(good["math-in-python"].replace('first_number + second_number', '65'), lessons["math-in-python"].validation).passed, false);
 });
@@ -134,6 +165,39 @@ test("behavior mode checks multiple inputs and permits different implementations
   const validation = { mode: "output", solution: 'print(int(input()) * 2)', cases: [{ label: "another number", inputs: ["7"] }] };
   assert.equal(run('n = int(input())\nprint(n + n)', validation, ["3"]).passed, true);
   assert.equal(run('print(6)', validation, ["3"]).passed, false);
+});
+
+test("student errors show their line and advice without runner frames", () => {
+  const validation = { mode: "output", solution: 'print(1)' };
+  const scenarios = [
+    ['print("before")\n1 / 0', /Line 2: ZeroDivisionError/, /must not be zero/],
+    ['print("before")\nprint(missing)', /Line 2: NameError/, /create the variable/],
+    ['print("before")\nprint(', /Line 2: SyntaxError/, /parentheses/],
+    ['if True:\nprint("hello")', /Line 2: IndentationError/, /indentation/],
+    ['number = int(input())', /Line 1: ValueError/, /float\(input/],
+    ['number = float(input())', /Line 1: ValueError/, /without extra words/],
+    ['number = input()\nprint(number / 2)', /Line 2: TypeError/, /before doing math/],
+    ['def divide():\n    return 1 / 0\ndivide()', /Line 2: ZeroDivisionError/, /return 1 \/ 0/],
+  ];
+  for (const [code, location, advice] of scenarios) {
+    const result = run(code, validation, [code.includes('int(input') ? '2.5' : 'hello']);
+    assert.match(result.error, location);
+    assert.match(result.error, advice);
+    assert.doesNotMatch(result.error, /Traceback|<exec>|<student>|validate\.py/);
+  }
+});
+
+test("hidden decimal failure preserves successful output and identifies the test input", () => {
+  const result = run('number = int(input("Enter a number: "))\nhalf = number / 2\nprint(half)',
+    lessons['one-half-of-a-number'].validation, ['10']);
+  assert.equal(result.passed, false);
+  assert.equal(result.output, '5.0\n');
+  assert.equal(result.error, null);
+  assert.match(result.message, /Your run finished successfully/);
+  assert.match(result.message, /a decimal number; input: '2.5'/);
+  assert.match(result.validationError, /Line 1: ValueError/);
+  assert.match(result.validationError, /float\(input/);
+  assert.doesNotMatch(result.validationError, /Traceback|<exec>|<student>/);
 });
 test("output whitespace remains meaningful and unbounded output stops", () => {
   assert.equal(run('print(" a")', { mode: "output", solution: 'print("a")' }).passed, false);

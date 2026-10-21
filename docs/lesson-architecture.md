@@ -270,7 +270,16 @@ After matching, the engine fills the solution with the captured values and
 compares its output with the student's output. Exact constants in the solution
 stay exact. Output comparison normalizes line endings and trailing newlines,
 but preserves spaces inside output. Error results are separate from output;
-Python tracebacks and output preceding an error are displayed.
+Errors show the student's line number, source line, and a tip for common
+beginner mistakes. Internal runner frames are omitted. Output preceding an
+error is preserved. Errors from additional validation cases appear in the
+validation panel with the test input; they do not replace the successful
+visible run's output.
+
+For exercises that print a single numeric answer, set
+`outputComparison: "numeric"` to accept equivalent forms such as `5` and `5.0`.
+This requires exactly one finite number and rejects extra messages or answers.
+Other lessons retain exact output comparison by default.
 
 Input exercises add repeatable cases:
 
